@@ -127,15 +127,22 @@ bool Interpreter::execute(){
 	return status != Status::Error;
 }
 
+namespace {
+enum class Stage {Code, Comment, StringBegin, String, StringEnd, MultiComment, MultiCommentEnd};
+}
+
 bool Interpreter::parse(){
-    const std::string valids = "dstckDSTCK0123456789";
+    const std::string valids = "dstackDSTACK0123456789";
     const std::string ignorable = " \t\n\r";
 
     std::string::size_type line = 1;
     std::string::size_type col = 0;
     Number position = 0;
+    std::string stringLiteral;
+    Number stringId;
 
-    bool inComment = false;
+    Stage stage = Stage::Code;
+
     for (char ch : source){
         ++col;
         if (ch == '\n'){
@@ -143,26 +150,81 @@ bool Interpreter::parse(){
             col = 0;
         }
 
-        if (inComment){
-            if (ch == '\n')
-                inComment = false;
-        } else {
-            if (ignorable.find(ch) != std::string::npos)
-                continue;
-            if (ch == '/'){
-                inComment = true;
-            } else if (valids.find(ch) != std::string::npos){
-                sourceParsed += ch;
-                positionMap.emplace(position, PositionInfo{line, col});
-                ++position;
-            } else{
-                status = Status::Error;
-                errorInfo.position = {line, col};
-                errorInfo.error = "Invalid character";
-                return false;
-            }
+        switch (stage){
+            case Stage::Code:
+                if (ignorable.find(ch) != std::string::npos){
+                    // nothing to do
+                } else if (ch == '/'){
+                    stage = Stage::Comment;
+                } else if (valids.find(ch) != std::string::npos){
+                    sourceParsed += ch;
+                    positionMap.emplace(position, PositionInfo{line, col});
+                    ++position;
+                } else if ((ch == '@') && (col == 1)){
+                    stage = Stage::StringBegin;
+                    stringLiteral.clear();
+                    stringId = 0;
+                } else{
+                    status = Status::Error;
+                    errorInfo.position = {line, col};
+                    errorInfo.error = "Invalid character: " + ch;
+                }
+                break;
+            case Stage::Comment:
+                if (ch == '\n')
+                    stage = Stage::Code;
+                break;
+            case Stage::StringBegin:
+                if (ch == '\n'){
+                    if (col == 2){
+                        stage = Stage::MultiComment;
+                    } else{
+                        stage = Stage::String;
+                    }
+                } else{
+                    if (isDigit(ch)){
+                        stringId = stringId * 10 + (ch - '0');
+                    } else{
+                        status = Status::Error;
+                        errorInfo.position = {line, col};
+                        errorInfo.error = "Invalid character: ";
+                        errorInfo.error += ch;
+                        errorInfo.error += " (Only digits are allowed)";
+                    }
+                }
+                break;
+            case Stage::String:
+            case Stage::MultiComment:
+                if ((ch == '@') && (col == 1)){
+                    stage = Stage::StringEnd;
+                } else{
+                    if (stage == Stage::String)
+                        strings[stringId] += ch;
+                }
+                break;
+            case Stage::StringEnd:
+            case Stage::MultiCommentEnd:
+                if (ch == '\n'){
+                    if (stage == Stage::StringEnd){
+                        strings[stringId].pop_back();
+                    }
+                    stage = Stage::Code;
+                } else{
+                    if (stage == Stage::StringEnd){
+                        strings[stringId] += '@';
+                        strings[stringId] += ch;
+                        stage = Stage::String;
+                    } else{
+                        stage = Stage::MultiComment;
+                    }
+                }
+                break;
         }
+
+        if (status == Status::Error)
+            return false;
     }
+    auto d = strings[123];
     return true;
 }
 

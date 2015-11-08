@@ -85,31 +85,43 @@ inline Opcodes toOpcode(const std::pair<char, char> &pair, bool alt){
         case 'd': switch (pair.second){
             case 's': return alt ? Opcodes::Mul : Opcodes::Add;
             case 't': return Opcodes::Sub;
+            case 'a': return Opcodes::None;
             case 'c': return Opcodes::Div;
             case 'k': return Opcodes::Rem;
         } break;
         case 's': switch (pair.second){
             case 'd': return Opcodes::Zero; // alt ?
             case 't': return alt ? Opcodes::Unequal : Opcodes::Equal;
+            case 'a': return Opcodes::None;
             case 'c': return Opcodes::Greater;
             case 'k': return Opcodes::GreOrEq;
         } break;
         case 't': switch (pair.second){
             case 'd': return Opcodes::Not;
             case 's': return alt ? Opcodes::And : Opcodes::Or;
+            case 'a': return Opcodes::None;
             case 'c': return Opcodes::Peek;
             case 'k': return alt ? Opcodes::Max : Opcodes::Min;
+        } break;
+        case 'a': switch (pair.second){
+            case 'd': return Opcodes::None;
+            case 's': return Opcodes::None;
+            case 't': return Opcodes::None;
+            case 'c': return Opcodes::None;
+            case 'k': return Opcodes::None;
         } break;
         case 'c': switch (pair.second){
             case 'd': return Opcodes::Send;
             case 's': return Opcodes::Pop;
             case 't': return Opcodes::Rand;
+            case 'a': return Opcodes::None;
             case 'k': return alt ? Opcodes::PrintN : Opcodes::PrintC;
         } break;
         case 'k': switch (pair.second){
             case 'd': return Opcodes::None;
             case 's': return Opcodes::Save;
             case 't': return Opcodes::Jump;
+            case 'a': return Opcodes::None;
             case 'c': return alt ? Opcodes::ReadN : Opcodes::ReadC;
         } break;
     }
