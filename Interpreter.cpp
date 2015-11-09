@@ -19,6 +19,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include "Interpreter.h"
 
+#include <algorithm>
 #include <chrono>
 #include <fstream>
 #include <iostream>
@@ -69,6 +70,11 @@ std::string interpolate(std::string s, const T &n1, const T &n2){
         s.replace(pos, 1, std::string() + n2);
 
     return s;
+}
+
+void pushString(const std::string &s, Stack &stack){
+    for (char ch : s)
+        stack.push_back(Number(ch));
 }
 
 }
@@ -316,6 +322,15 @@ bool Interpreter::execute(std::pair<char, char> pair, Opcodes code, Stack &first
         case Opcodes::Max:      reg = std::max(first.back(), second.back()); break;
 
         case Opcodes::Push:     first.push_back(reg); break;
+        case Opcodes::PushS:    if (strings.count(reg))
+                                    pushString(strings[reg], first);
+                                break;
+        case Opcodes::PushRS:   if (strings.count(reg)){
+                                    std::string tmp = strings[reg];
+                                    std::reverse(tmp.begin(), tmp.end());
+                                    pushString(tmp, first);
+                                }
+                                break;
         case Opcodes::Send:     second.push_back(first.back());
                                 first.pop_back();
                                 if (first.empty())

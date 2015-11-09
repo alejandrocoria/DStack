@@ -50,9 +50,11 @@ enum class Opcodes {
     Max         = 32,
 
     Push        = 40,
-    Send        = 41,
-    Peek        = 42,
-    Pop         = 43,
+    PushS       = 41,
+    PushRS      = 42,
+    Send        = 43,
+    Peek        = 44,
+    Pop         = 45,
 
     Save        = 50,
     Jump        = 51,
@@ -114,8 +116,8 @@ inline Opcodes toOpcode(const std::pair<char, char> &pair, bool alt){
             case 'd': return Opcodes::PrintS; // alt ?
             case 's': return Opcodes::PrintSiN;
             case 't': return Opcodes::PrintSiC;
-            case 'c': return Opcodes::None;
-            case 'k': return Opcodes::None;
+            case 'c': return Opcodes::PushS;
+            case 'k': return Opcodes::PushRS;
         } break;
         case 'c': switch (pair.second){
             case 'd': return Opcodes::Send;
@@ -166,6 +168,8 @@ inline std::string toString(Opcodes code){
         case Opcodes::Max:      return "Maximum";
 
         case Opcodes::Push:     return "Push";
+        case Opcodes::PushS:    return "Push String";
+        case Opcodes::PushRS:   return "Push Reversed String";
         case Opcodes::Send:     return "Send";
         case Opcodes::Peek:     return "Peek";
         case Opcodes::Pop:      return "Pop";
@@ -178,8 +182,8 @@ inline std::string toString(Opcodes code){
         case Opcodes::PrintN:   return "Print Number";
         case Opcodes::PrintC:   return "Print Character";
         case Opcodes::PrintS:   return "Print String";
-        case Opcodes::PrintSiN: return "Print String Interpolated with numbers";
-        case Opcodes::PrintSiC: return "Print String Interpolated with characters";
+        case Opcodes::PrintSiN: return "Print String Interpolated with Numbers";
+        case Opcodes::PrintSiC: return "Print String Interpolated with Characters";
         case Opcodes::ReadN:    return "Read Number";
         case Opcodes::ReadC:    return "Read Character";
 	}
