@@ -53,9 +53,22 @@ void printStack(const Stack &stack){
     std::cout << "\n";
 }
 
-void printLine(unsigned int n){
+void printLine(unsigned int n, char ch = '-'){
     for (unsigned int i = 0; i < n; ++i)
-        std::cout << '-';
+        std::cout << ch;
+}
+
+template<class T>
+std::string interpolate(std::string s, const T &n1, const T &n2){
+    std::string::size_type pos;
+
+    while ((pos = s.find("#")) != std::string::npos)
+        s.replace(pos, 1, std::string() + n1);
+
+    while ((pos = s.find("$")) != std::string::npos)
+        s.replace(pos, 1, std::string() + n2);
+
+    return s;
 }
 
 }
@@ -76,6 +89,7 @@ bool Interpreter::load(const std::string &path){
 		std::stringstream buffer;
 		buffer << t.rdbuf();
 		source = buffer.str();
+		source += '\n';
 		parse();
 		if (status == Status::Error){
             showError();
@@ -90,6 +104,9 @@ bool Interpreter::load(const std::string &path){
 }
 
 bool Interpreter::execute(){
+    if (sourceParsed.empty())
+        return true;
+
 	std::pair<char, char> pair;
 	Stack *first;
 	Stack *second;
@@ -141,6 +158,8 @@ bool Interpreter::parse(){
     std::string stringLiteral;
     Number stringId;
 
+    PositionInfo atPosition;
+
     Stage stage = Stage::Code;
 
     for (char ch : source){
@@ -164,10 +183,13 @@ bool Interpreter::parse(){
                     stage = Stage::StringBegin;
                     stringLiteral.clear();
                     stringId = 0;
+                    atPosition.line = line;
+                    atPosition.col = col;
                 } else{
                     status = Status::Error;
                     errorInfo.position = {line, col};
-                    errorInfo.error = "Invalid character: " + ch;
+                    errorInfo.error = "Invalid character: ";
+                    errorInfo.error += ch;
                 }
                 break;
             case Stage::Comment:
@@ -222,14 +244,24 @@ bool Interpreter::parse(){
         }
 
         if (status == Status::Error)
-            return false;
+            break;
     }
-    auto d = strings[123];
-    return true;
+
+    if (stage == Stage::MultiComment){
+        status = Status::Error;
+        errorInfo.position = atPosition;
+        errorInfo.error = "The comment is not closed before the end of file. Start";
+    } else if (stage == Stage::String){
+        status = Status::Error;
+        errorInfo.position = atPosition;
+        errorInfo.error = "The string literal is not closed before the end of file. Start";
+    }
+
+    return status != Status::Error;
 }
 
 bool Interpreter::getPair(std::pair<char, char> &pair){
-	if (pos + 1 >= sourceParsed.length()){
+	if (pos >= sourceParsed.length() - 1){
 		status = Status::EoF;
 		return false;
 	}
@@ -248,8 +280,9 @@ bool Interpreter::execute(std::pair<char, char> pair, Opcodes code, Stack &first
 	    case Opcodes::None:     break;
 
         case Opcodes::Add:      reg = first.back() + second.back(); break;
-        case Opcodes::Sub:      reg = first.back() - second.back(); break;
         case Opcodes::Mul:      reg = first.back() * second.back(); break;
+        case Opcodes::Sub:      reg = first.back() - second.back(); break;
+        case Opcodes::Pow:      reg = std::pow(first.back(), second.back()); break;
         case Opcodes::Div:      if (second.back() == 0){
                                     status = Status::Error;
                                     errorInfo.position = positionMap[pos];
@@ -271,9 +304,10 @@ bool Interpreter::execute(std::pair<char, char> pair, Opcodes code, Stack &first
         case Opcodes::Unequal:  reg = first.back() != second.back(); break;
         case Opcodes::Greater:  reg = first.back() > second.back(); break;
         case Opcodes::GreOrEq:  reg = first.back() >= second.back(); break;
+        case Opcodes::Not:      reg = !first.back(); break;
         case Opcodes::And:      reg = Number(first.back() && second.back()); break;
         case Opcodes::Or:       reg = Number(first.back() || second.back()); break;
-        case Opcodes::Not:      reg = !first.back(); break;
+        case Opcodes::Xor:      reg = Number(!first.back() != !second.back()); break;
 
         case Opcodes::Rand:     if (first.back() <= second.back())
                                     reg = getRandom(first.back(), second.back());
@@ -299,9 +333,37 @@ bool Interpreter::execute(std::pair<char, char> pair, Opcodes code, Stack &first
                                     increment = false;
                                 }
                                 break;
+        case Opcodes::Reset:    if (reg){
+                                    pos = 0;
+                                    reg = 0;
+                                    stackA.clear(); stackA.push_back(0);
+                                    stackB.clear(); stackB.push_back(0);
+                                    std::cin.clear();
+                                    std::cin.sync();
+                                    debugOutput.clear();
+                                    increment = false;
+                                }
+                                break;
+        case Opcodes::Halt:     if (reg)
+                                     // halts the program because no program
+                                     // is going to have such a high position
+                                    pos = -1;
+                                    increment = false;
+                                break;
 
         case Opcodes::PrintN:   print(toString(reg)); break;
         case Opcodes::PrintC:   print(toChar(reg)); break;
+        case Opcodes::PrintS:   if (strings.count(reg))
+                                    print(strings[reg]);
+                                break;
+        case Opcodes::PrintSiN: if (strings.count(reg))
+                                    print(interpolate(strings[reg],
+                                          toString(first.back()), toString(second.back())));
+                                break;
+        case Opcodes::PrintSiC: if (strings.count(reg))
+                                    print(interpolate(strings[reg],
+                                          toChar(first.back()), toChar(second.back())));
+                                break;
         case Opcodes::ReadN:    reg = readNumber(std::cin); break;
         case Opcodes::ReadC:    reg = readChar(std::cin); break;
 	}
@@ -352,8 +414,10 @@ void Interpreter::printCurrentOpcode(Opcodes code, bool alt){
 }
 
 void Interpreter::showError(){
-    std::cout << "\n*********************************\n";
+    printLine(79, '*');
+    std::cout << "\n";
     std::cout << errorInfo.error << " in ";
     std::cout << errorInfo.position.line << ":" << errorInfo.position.col << "\n";
-    std::cout << "*********************************\n";
+    printLine(79, '*');
+    std::cout << "\n";
 }

@@ -30,8 +30,9 @@ enum class Opcodes {
     Add         = 1,
     Mul         = 2,
     Sub         = 3,
-    Div         = 4,
-    Rem         = 5,
+    Pow         = 4,
+    Div         = 5,
+    Rem         = 6,
 
     Zero        = 10,
 
@@ -42,6 +43,7 @@ enum class Opcodes {
     Not         = 24,
     And         = 25,
     Or          = 26,
+    Xor         = 27,
 
     Rand        = 30,
     Min         = 31,
@@ -54,11 +56,16 @@ enum class Opcodes {
 
     Save        = 50,
     Jump        = 51,
+    Reset       = 52,
+    Halt        = 53,
 
     PrintN      = 60,
     PrintC      = 61,
-    ReadN       = 62,
-    ReadC       = 63,
+    PrintS      = 62,
+    PrintSiN    = 63,
+    PrintSiC    = 64,
+    ReadN       = 65,
+    ReadC       = 66,
 };
 
 namespace {
@@ -85,7 +92,7 @@ inline Opcodes toOpcode(const std::pair<char, char> &pair, bool alt){
         case 'd': switch (pair.second){
             case 's': return alt ? Opcodes::Mul : Opcodes::Add;
             case 't': return Opcodes::Sub;
-            case 'a': return Opcodes::None;
+            case 'a': return Opcodes::Pow;
             case 'c': return Opcodes::Div;
             case 'k': return Opcodes::Rem;
         } break;
@@ -99,14 +106,14 @@ inline Opcodes toOpcode(const std::pair<char, char> &pair, bool alt){
         case 't': switch (pair.second){
             case 'd': return Opcodes::Not;
             case 's': return alt ? Opcodes::And : Opcodes::Or;
-            case 'a': return Opcodes::None;
+            case 'a': return Opcodes::Xor; // slt ?
             case 'c': return Opcodes::Peek;
             case 'k': return alt ? Opcodes::Max : Opcodes::Min;
         } break;
         case 'a': switch (pair.second){
-            case 'd': return Opcodes::None;
-            case 's': return Opcodes::None;
-            case 't': return Opcodes::None;
+            case 'd': return Opcodes::PrintS; // alt ?
+            case 's': return Opcodes::PrintSiN;
+            case 't': return Opcodes::PrintSiC;
             case 'c': return Opcodes::None;
             case 'k': return Opcodes::None;
         } break;
@@ -121,7 +128,7 @@ inline Opcodes toOpcode(const std::pair<char, char> &pair, bool alt){
             case 'd': return Opcodes::None;
             case 's': return Opcodes::Save;
             case 't': return Opcodes::Jump;
-            case 'a': return Opcodes::None;
+            case 'a': return alt ? Opcodes::Halt : Opcodes::Reset;
             case 'c': return alt ? Opcodes::ReadN : Opcodes::ReadC;
         } break;
     }
@@ -137,8 +144,9 @@ inline std::string toString(Opcodes code){
 	    case Opcodes::None:     return "None";
 
         case Opcodes::Add:      return "Add";
-        case Opcodes::Sub:      return "Subtract";
         case Opcodes::Mul:      return "Multiply";
+        case Opcodes::Sub:      return "Subtract";
+        case Opcodes::Pow:      return "Power";
         case Opcodes::Div:      return "Divide";
         case Opcodes::Rem:      return "Remainder";
 
@@ -148,9 +156,10 @@ inline std::string toString(Opcodes code){
         case Opcodes::Unequal:  return "Unequal";
         case Opcodes::Greater:  return "Greater";
         case Opcodes::GreOrEq:  return "Greater Or Equal";
+        case Opcodes::Not:      return "Not";
         case Opcodes::And:      return "And";
         case Opcodes::Or:       return "Or";
-        case Opcodes::Not:      return "Not";
+        case Opcodes::Xor:      return "Xor";
 
         case Opcodes::Rand:     return "Random";
         case Opcodes::Min:      return "Minimum";
@@ -163,9 +172,14 @@ inline std::string toString(Opcodes code){
 
         case Opcodes::Save:     return "Save";
         case Opcodes::Jump:     return "Jump";
+        case Opcodes::Reset:    return "Reset";
+        case Opcodes::Halt:     return "Halt";
 
         case Opcodes::PrintN:   return "Print Number";
         case Opcodes::PrintC:   return "Print Character";
+        case Opcodes::PrintS:   return "Print String";
+        case Opcodes::PrintSiN: return "Print String Interpolated with numbers";
+        case Opcodes::PrintSiC: return "Print String Interpolated with characters";
         case Opcodes::ReadN:    return "Read Number";
         case Opcodes::ReadC:    return "Read Character";
 	}
