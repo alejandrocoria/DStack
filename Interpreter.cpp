@@ -105,7 +105,7 @@ bool Interpreter::load(const std::string &path){
 		}
 	}
 
-	std::cout << "The file could not be opened\n";
+	std::cout << "The file could not be opened (" + path + ")";
 	return false;
 }
 
@@ -159,7 +159,7 @@ bool Interpreter::parse(){
     const std::string ignorable = " \t\n\r";
 
     std::string::size_type line = 1;
-    std::string::size_type col = 0;
+    std::string::size_type col = 1;
     Number position = 0;
     std::string stringLiteral;
     Number stringId;
@@ -169,12 +169,6 @@ bool Interpreter::parse(){
     Stage stage = Stage::Code;
 
     for (char ch : source){
-        ++col;
-        if (ch == '\n'){
-            ++line;
-            col = 0;
-        }
-
         switch (stage){
             case Stage::Code:
                 if (ignorable.find(ch) != std::string::npos){
@@ -224,7 +218,10 @@ bool Interpreter::parse(){
             case Stage::String:
             case Stage::MultiComment:
                 if ((ch == '@') && (col == 1)){
-                    stage = Stage::StringEnd;
+                    if (stage == Stage::String)
+                        stage = Stage::StringEnd;
+                    else
+                        stage = Stage::MultiCommentEnd;
                 } else{
                     if (stage == Stage::String)
                         strings[stringId] += ch;
@@ -247,6 +244,12 @@ bool Interpreter::parse(){
                     }
                 }
                 break;
+        }
+
+        ++col;
+        if (ch == '\n'){
+            ++line;
+            col = 1;
         }
 
         if (status == Status::Error)
