@@ -308,6 +308,14 @@ bool Interpreter::execute(std::pair<char, char> pair, Opcodes code, Stack &first
 
         case Opcodes::Equal:    reg = first.back() == second.back(); break;
         case Opcodes::Unequal:  reg = first.back() != second.back(); break;
+        case Opcodes::BetweenI:{Number min = std::min(first.back(), second.back());
+                                Number max = std::max(first.back(), second.back());
+                                reg = (min <= reg) && (reg <= max);
+                                } break;
+        case Opcodes::BetweenE:{Number min = std::min(first.back(), second.back());
+                                Number max = std::max(first.back(), second.back());
+                                reg = (min < reg) && (reg < max);
+                                } break;
         case Opcodes::Greater:  reg = first.back() > second.back(); break;
         case Opcodes::GreOrEq:  reg = first.back() >= second.back(); break;
         case Opcodes::Not:      reg = !first.back(); break;
@@ -341,6 +349,7 @@ bool Interpreter::execute(std::pair<char, char> pair, Opcodes code, Stack &first
                                 if (first.empty())
                                     first.push_back(0);
                                 break;
+        case Opcodes::Swap:     std::swap(first.back(), second.back()); break;
 
         case Opcodes::Save:     first.push_back(pos + 1); break;
         case Opcodes::Jump:     if (reg){

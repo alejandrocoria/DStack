@@ -38,12 +38,14 @@ enum class Opcodes {
 
     Equal       = 20,
     Unequal     = 21,
-    Greater     = 22,
-    GreOrEq     = 23,
-    Not         = 24,
-    And         = 25,
-    Or          = 26,
-    Xor         = 27,
+    BetweenI    = 22,
+    BetweenE    = 23,
+    Greater     = 24,
+    GreOrEq     = 25,
+    Not         = 26,
+    And         = 27,
+    Or          = 28,
+    Xor         = 29,
 
     Rand        = 30,
     Min         = 31,
@@ -55,6 +57,7 @@ enum class Opcodes {
     Send        = 43,
     Peek        = 44,
     Pop         = 45,
+    Swap        = 46,
 
     Save        = 50,
     Jump        = 51,
@@ -101,7 +104,7 @@ inline Opcodes toOpcode(const std::pair<char, char> &pair, bool alt){
         case 's': switch (pair.second){
             case 'd': return Opcodes::Zero; // alt ?
             case 't': return alt ? Opcodes::Unequal : Opcodes::Equal;
-            case 'a': return Opcodes::None;
+            case 'a': return alt ? Opcodes::BetweenE : Opcodes::BetweenI;
             case 'c': return Opcodes::Greater;
             case 'k': return Opcodes::GreOrEq;
         } break;
@@ -123,7 +126,7 @@ inline Opcodes toOpcode(const std::pair<char, char> &pair, bool alt){
             case 'd': return Opcodes::Send;
             case 's': return Opcodes::Pop;
             case 't': return Opcodes::Rand;
-            case 'a': return Opcodes::None;
+            case 'a': return Opcodes::Swap; // alt ?
             case 'k': return alt ? Opcodes::PrintN : Opcodes::PrintC;
         } break;
         case 'k': switch (pair.second){
@@ -156,6 +159,8 @@ inline std::string toString(Opcodes code){
 
         case Opcodes::Equal:    return "Equal";
         case Opcodes::Unequal:  return "Unequal";
+        case Opcodes::BetweenI: return "Between Inclusive";
+        case Opcodes::BetweenE: return "Between Exclusive";
         case Opcodes::Greater:  return "Greater";
         case Opcodes::GreOrEq:  return "Greater Or Equal";
         case Opcodes::Not:      return "Not";
@@ -173,6 +178,7 @@ inline std::string toString(Opcodes code){
         case Opcodes::Send:     return "Send";
         case Opcodes::Peek:     return "Peek";
         case Opcodes::Pop:      return "Pop";
+        case Opcodes::Swap:     return "Swap";
 
         case Opcodes::Save:     return "Save";
         case Opcodes::Jump:     return "Jump";
