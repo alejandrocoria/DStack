@@ -30,35 +30,47 @@ enum class Opcodes {
     Add         = 1,
     Mul         = 2,
     Sub         = 3,
-    Div         = 4,
-    Rem         = 5,
+    Pow         = 4,
+    Div         = 5,
+    Rem         = 6,
 
     Zero        = 10,
 
     Equal       = 20,
     Unequal     = 21,
-    Greater     = 22,
-    GreOrEq     = 23,
-    Not         = 24,
-    And         = 25,
-    Or          = 26,
+    BetweenI    = 22,
+    BetweenE    = 23,
+    Greater     = 24,
+    GreOrEq     = 25,
+    Not         = 26,
+    And         = 27,
+    Or          = 28,
+    Xor         = 29,
 
     Rand        = 30,
     Min         = 31,
     Max         = 32,
 
     Push        = 40,
-    Send        = 41,
-    Peek        = 42,
-    Pop         = 43,
+    PushS       = 41,
+    PushRS      = 42,
+    Send        = 43,
+    Peek        = 44,
+    Pop         = 45,
+    Swap        = 46,
 
     Save        = 50,
     Jump        = 51,
+    Reset       = 52,
+    Halt        = 53,
 
     PrintN      = 60,
     PrintC      = 61,
-    ReadN       = 62,
-    ReadC       = 63,
+    PrintS      = 62,
+    PrintSiN    = 63,
+    PrintSiC    = 64,
+    ReadN       = 65,
+    ReadC       = 66,
 };
 
 namespace {
@@ -85,31 +97,43 @@ inline Opcodes toOpcode(const std::pair<char, char> &pair, bool alt){
         case 'd': switch (pair.second){
             case 's': return alt ? Opcodes::Mul : Opcodes::Add;
             case 't': return Opcodes::Sub;
+            case 'a': return Opcodes::Pow;
             case 'c': return Opcodes::Div;
             case 'k': return Opcodes::Rem;
         } break;
         case 's': switch (pair.second){
             case 'd': return Opcodes::Zero; // alt ?
             case 't': return alt ? Opcodes::Unequal : Opcodes::Equal;
+            case 'a': return alt ? Opcodes::BetweenE : Opcodes::BetweenI;
             case 'c': return Opcodes::Greater;
             case 'k': return Opcodes::GreOrEq;
         } break;
         case 't': switch (pair.second){
             case 'd': return Opcodes::Not;
             case 's': return alt ? Opcodes::And : Opcodes::Or;
+            case 'a': return Opcodes::Xor; // slt ?
             case 'c': return Opcodes::Peek;
             case 'k': return alt ? Opcodes::Max : Opcodes::Min;
+        } break;
+        case 'a': switch (pair.second){
+            case 'd': return Opcodes::PrintS; // alt ?
+            case 's': return Opcodes::PrintSiN;
+            case 't': return Opcodes::PrintSiC;
+            case 'c': return Opcodes::PushS;
+            case 'k': return Opcodes::PushRS;
         } break;
         case 'c': switch (pair.second){
             case 'd': return Opcodes::Send;
             case 's': return Opcodes::Pop;
             case 't': return Opcodes::Rand;
+            case 'a': return Opcodes::Swap; // alt ?
             case 'k': return alt ? Opcodes::PrintN : Opcodes::PrintC;
         } break;
         case 'k': switch (pair.second){
             case 'd': return Opcodes::None;
             case 's': return Opcodes::Save;
             case 't': return Opcodes::Jump;
+            case 'a': return alt ? Opcodes::Halt : Opcodes::Reset;
             case 'c': return alt ? Opcodes::ReadN : Opcodes::ReadC;
         } break;
     }
@@ -125,8 +149,9 @@ inline std::string toString(Opcodes code){
 	    case Opcodes::None:     return "None";
 
         case Opcodes::Add:      return "Add";
-        case Opcodes::Sub:      return "Subtract";
         case Opcodes::Mul:      return "Multiply";
+        case Opcodes::Sub:      return "Subtract";
+        case Opcodes::Pow:      return "Power";
         case Opcodes::Div:      return "Divide";
         case Opcodes::Rem:      return "Remainder";
 
@@ -134,26 +159,37 @@ inline std::string toString(Opcodes code){
 
         case Opcodes::Equal:    return "Equal";
         case Opcodes::Unequal:  return "Unequal";
+        case Opcodes::BetweenI: return "Between Inclusive";
+        case Opcodes::BetweenE: return "Between Exclusive";
         case Opcodes::Greater:  return "Greater";
         case Opcodes::GreOrEq:  return "Greater Or Equal";
+        case Opcodes::Not:      return "Not";
         case Opcodes::And:      return "And";
         case Opcodes::Or:       return "Or";
-        case Opcodes::Not:      return "Not";
+        case Opcodes::Xor:      return "Xor";
 
         case Opcodes::Rand:     return "Random";
         case Opcodes::Min:      return "Minimum";
         case Opcodes::Max:      return "Maximum";
 
         case Opcodes::Push:     return "Push";
+        case Opcodes::PushS:    return "Push String";
+        case Opcodes::PushRS:   return "Push Reversed String";
         case Opcodes::Send:     return "Send";
         case Opcodes::Peek:     return "Peek";
         case Opcodes::Pop:      return "Pop";
+        case Opcodes::Swap:     return "Swap";
 
         case Opcodes::Save:     return "Save";
         case Opcodes::Jump:     return "Jump";
+        case Opcodes::Reset:    return "Reset";
+        case Opcodes::Halt:     return "Halt";
 
         case Opcodes::PrintN:   return "Print Number";
         case Opcodes::PrintC:   return "Print Character";
+        case Opcodes::PrintS:   return "Print String";
+        case Opcodes::PrintSiN: return "Print String Interpolated with Numbers";
+        case Opcodes::PrintSiC: return "Print String Interpolated with Characters";
         case Opcodes::ReadN:    return "Read Number";
         case Opcodes::ReadC:    return "Read Character";
 	}

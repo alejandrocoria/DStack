@@ -65,6 +65,7 @@ private:
 	Stack stackB;
 	Number reg;
 	Number pos;
+	std::map<Number, std::string> strings;
 	std::string source;
 	std::string sourceParsed;
 	std::map<Number, PositionInfo> positionMap;
