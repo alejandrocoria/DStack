@@ -60,7 +60,10 @@ Number readNumber(std::istream &stream){
 
 Number readChar(std::istream &stream){
     char ch;
-    stream.get(ch);
-
-    return static_cast<Number>(ch);
+    if (stream.get(ch)){
+        return static_cast<Number>(ch);
+    } else{
+        stream.clear();
+        return Number(0);
+    }
 }
