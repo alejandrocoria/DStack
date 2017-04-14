@@ -52,7 +52,7 @@ Number readNumber(std::istream &stream){
     do{
         std::getline(stream, tmp);
         std::stringstream ss(tmp);
-        exit = ss >> number;
+        exit = (bool) ss >> number;
     } while (!exit);
 
     return number;
